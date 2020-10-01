@@ -77,7 +77,7 @@ class ConvexHullSolver(QObject):
                 tempRightIndex = 0
             secSlope = leftHull[leftIndex].y() - rightHull[tempRightIndex].y() / leftHull[leftIndex].x() - rightHull[
                 tempRightIndex].x()
-            if (firstSlope > secSlope):  # Found the tallest slope from left most point
+            if abs(firstSlope) > abs(secSlope):  # Found the tallest slope from left most point
                 break
             rightIndex += 1
             if rightIndex == len(rightHull):
@@ -106,11 +106,12 @@ class ConvexHullSolver(QObject):
             firstSlope = leftHull[leftIndex].y() - rightHull[rightIndex].y() / leftHull[leftIndex].x() - rightHull[
                 rightIndex].x()
             tempRightIndex = rightIndex - 1
+            tempTemp = len(rightHull)
             if tempRightIndex == -1:
                 tempRightIndex = len(rightHull) - 1
             secSlope = leftHull[leftIndex].y() - rightHull[tempRightIndex].y() / leftHull[leftIndex].x() - rightHull[
                 tempRightIndex].x()
-            if (firstSlope < secSlope):  # Found the tallest slope from left most point
+            if (abs(firstSlope) < abs(secSlope)):  # Found the tallest slope from left most point
                 break
             rightIndex -= 1
             if rightIndex == -1:
@@ -120,30 +121,42 @@ class ConvexHullSolver(QObject):
         while True:
             firstSlope = leftHull[leftIndex].y() - rightHull[rightIndex].y() / leftHull[leftIndex].x() - rightHull[
                 rightIndex].x()
-            tempLeftIndex = leftIndex + 1
-            if tempLeftIndex == len(leftHull):
-                tempLeftIndex = 0
-            secSlope = leftHull[tempLeftIndex].y() - rightHull[rightIndex].y() / leftHull[tempLeftIndex].x() - \
-                       rightHull[rightIndex].x()
+            tempIndex = leftIndex + 1
+            if tempIndex == len(leftHull):
+                tempIndex = 0
+            secSlope = leftHull[tempIndex].y() - rightHull[rightIndex].y() / leftHull[tempIndex].x() - rightHull[rightIndex].x()
             if secSlope > firstSlope:
                 break
             leftIndex += 1
             if leftIndex == len(leftHull):
                 leftIndex = 0
             # lowerLeft = leftHull(leftIndex)
-        return [rightHull(rightIndex), leftHull(leftIndex)]
+        return [rightIndex, leftIndex]
 
 
     def Merge(self, leftHull, rightHull):
         hull = []
         upperLeftIndex, upperRightIndex = self.findUpperTangeant(leftHull, rightHull)
+        lowerRightIndex, lowerLeftIndex = self.findLowerTangeant(leftHull, rightHull)
+
         #loop until I get to first var
         #find second var and keep looping
-        lowerLeftIndex, lowerRightIndex = self.findLowerTangeant(leftHull, rightHull)
-        for i in range(leftHull):
-            leftHull = leftHull
+        for i in range(upperLeftIndex):
+            #temp = leftHull[i]
+            hull.append(leftHull[i])
+        if 0 == upperLeftIndex:
+            hull.append(leftHull[upperLeftIndex])
+        for i in range(lowerRightIndex - upperRightIndex):
+            hull.append(rightHull[i + upperRightIndex])
+        if 0 == (lowerRightIndex - upperRightIndex):
+            hull.append(rightHull[upperRightIndex])
+            hull.append(rightHull[lowerRightIndex])
         #until I get to firstlowertan var
         #loops until I get to second, then add rest of loop
+        for i in range(lowerLeftIndex, len(leftHull) - 1):
+            hull.append(leftHull[i])
+        if(lowerLeftIndex == len(leftHull) - 1):
+            hull.append(rightHull[lowerLeftIndex])
         return hull
 
     def DC(self, points):
@@ -161,10 +174,7 @@ class ConvexHullSolver(QObject):
         else:
             leftPoints = points[:len(points) // 2]
             rightPoints = points[len(points) // 2:]
-            tempLeft = self.DC(leftPoints)
-            tempRight = self.DC(rightPoints)
-            #hull += self.Merge(self.DC(leftPoints), self.DC(rightPoints))
-            hull += self.Merge(tempLeft, tempRight)
+            hull += self.Merge(self.DC(leftPoints), self.DC(rightPoints))
         return hull
 
     # This method is just to sort the points for the first part, then makes the recusive call start
